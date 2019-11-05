@@ -60,7 +60,9 @@ typings/
 # next.js build output
 .next
 
-/.idea/
+# PHPStorm/WebStorm config
+.idea/
+
+# custom
 /access_token.json
 /db.json
-/vendor/
