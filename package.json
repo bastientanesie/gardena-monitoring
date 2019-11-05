@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Bastien Tanésie <bastien.tanesie@gmail.com>",
-  "license": "ISC",
+  "license": "gpl-3.0",
   "dependencies": {
     "debug": "^4.1.1",
     "dotenv": "^8.2.0",
