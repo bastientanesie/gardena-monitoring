@@ -52,12 +52,8 @@ oauth.getAccessToken(
         const json = JSON.stringify(Array.from(devices.values()).map((device) => {
             return device.serialize();
         }), null, 2);
-        fs.writeFile(DB_FILEPATH, json, { flag: 'w' }, (error) => {
-            if (error) {
-                throw error;
-            }
-            debug('Database auto-saved');
-        });
+        fs.writeFileSync(DB_FILEPATH, json, { flag: 'w' });
+        debug('Database auto-saved');
     }, 30 * 1000);
 
     // Lancement de la boucle de websockets
@@ -72,17 +68,12 @@ oauth.getAccessToken(
 const handleExit = (code) => {
     const json = JSON.stringify(Array.from(devices.values()).map((device) => {
         return device.serialize();
-    }), null, 2);
-    fs.writeFile(DB_FILEPATH, json, { flag: 'w' }, (error) => {
-        if (error) {
-            throw error;
-        }
-        debug('Database saved before exit');
-        process.exit(code);
-    });
+    }));
+    fs.writeFileSync(DB_FILEPATH, json, { flag: 'w' });
+    debug('Database saved before exit');
+    process.exit(code);
 };
 
-process.on('exit', handleExit);
 process.on('SIGTERM', handleExit);
 process.on('SIGINT', handleExit);
 process.on('SIGKILL', handleExit);
