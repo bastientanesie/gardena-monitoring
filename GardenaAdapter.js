@@ -1,7 +1,7 @@
 "use strict";
 
 const request = require('request');
-const debug = require('debug');
+const debug = require('debug')('gardena:api');
 
 class GardenaAdapter {
     constructor(apiEndpoint, apiKey, accessToken) {
@@ -17,8 +17,6 @@ class GardenaAdapter {
                 bearer: accessToken
             }
         });
-
-        this._debug = debug('gardena:api');
     }
 
     /**

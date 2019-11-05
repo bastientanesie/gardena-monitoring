@@ -2,6 +2,7 @@ require('dotenv').config();
 const OauthAdapter = require('./OauthAdapter');
 const GardenaAdapter = require('./GardenaAdapter');
 const WebsocketHandler = require('./WebsocketHandler');
+const Mower = require("./Mower");
 const fs = require('fs');
 const debug = require('debug')('gardena');
 
@@ -13,15 +14,13 @@ function launchWebSocketLoop(devices, gardenaAdapter, locationId) {
             devices,
             websocket.attributes.url,
             () => {
-                fs.writeFileSync(DB_FILEPATH, JSON.stringify(devices), { flag: 'w+' });
-                debug('Database saved');
                 launchWebSocketLoop(devices, gardenaAdapter, locationId);
             }
         );
     });
 }
 
-let devices = {};
+let devices = new Map([]);
 
 const oauth = new OauthAdapter(process.env.OAUTH_ENDPOINT, process.env.OAUTH_API_KEY);
 
@@ -35,16 +34,33 @@ oauth.getAccessToken(
         token.access_token
     );
 
+    // Loading database
     if (fs.existsSync(DB_FILEPATH)) {
-        devices = JSON.parse(fs.readFileSync(DB_FILEPATH).toString());
+        JSON.parse(
+            fs.readFileSync(DB_FILEPATH).toString()
+        ).forEach((device) => {
+            devices.set(
+                device.id,
+                Mower.fromJson(device)
+            );
+        });
         debug(`Database loaded`);
     }
+
     // Sauvegarde auto toutes les 5min
     setInterval(() => {
-        fs.writeFileSync(DB_FILEPATH, JSON.stringify(devices), { flag: 'w+' });
-        debug('Database auto-saved');
-    }, 5 * 60 * 1000);
+        const json = JSON.stringify(Array.from(devices.values()).map((device) => {
+            return device.serialize();
+        }), null, 2);
+        fs.writeFile(DB_FILEPATH, json, { flag: 'w' }, (error) => {
+            if (error) {
+                throw error;
+            }
+            debug('Database auto-saved');
+        });
+    }, 30 * 1000);
 
+    // Lancement de la boucle de websockets
     gardena.getLocations().then((locations) => {
         for (let location of locations) {
             debug('Location "%s": %s', location.attributes.name, location.id);
@@ -52,3 +68,21 @@ oauth.getAccessToken(
         }
     });
 });
+
+const handleExit = (code) => {
+    const json = JSON.stringify(Array.from(devices.values()).map((device) => {
+        return device.serialize();
+    }), null, 2);
+    fs.writeFile(DB_FILEPATH, json, { flag: 'w' }, (error) => {
+        if (error) {
+            throw error;
+        }
+        debug('Database saved before exit');
+        process.exit(code);
+    });
+};
+
+process.on('exit', handleExit);
+process.on('SIGTERM', handleExit);
+process.on('SIGINT', handleExit);
+process.on('SIGKILL', handleExit);
