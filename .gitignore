@@ -59,3 +59,8 @@ typings/
 
 # next.js build output
 .next
+
+/.idea/
+/access_token.json
+/db.json
+/vendor/
