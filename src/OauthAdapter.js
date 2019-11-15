@@ -4,11 +4,10 @@ const request = require('request');
 const fs = require('fs');
 const debug = require('debug');
 
-const ACCESS_TOKEN_FILEPATH = './access_token.json';
-
 class OauthAdapter {
-    constructor(apiEndpoint, apiKey) {
+    constructor(apiEndpoint, apiKey, tokenFilepath) {
         this._apiKey = apiKey;
+        this._tokenFilepath = tokenFilepath;
 
         this._httpClient = request.defaults({
             baseUrl: apiEndpoint,
@@ -47,7 +46,7 @@ class OauthAdapter {
                 }
 
                 try {
-                    fs.writeFileSync(ACCESS_TOKEN_FILEPATH, body, { flag: 'w+' });
+                    fs.writeFileSync(this._tokenFilepath, body, { flag: 'w+' });
                     this._debug(`New access token saved`);
                     return resolve(JSON.parse(body));
                 } catch (error) {
@@ -123,10 +122,10 @@ class OauthAdapter {
      * @returns {Promise<Object>}
      */
     getAccessToken(username, password) {
-        if (fs.existsSync(ACCESS_TOKEN_FILEPATH)) {
+        if (fs.existsSync(this._tokenFilepath)) {
             this._debug(`Using stored access token`);
             return Promise.resolve(
-                JSON.parse(fs.readFileSync(ACCESS_TOKEN_FILEPATH).toString())
+                JSON.parse(fs.readFileSync(this._tokenFilepath).toString())
             );
         }
         else {

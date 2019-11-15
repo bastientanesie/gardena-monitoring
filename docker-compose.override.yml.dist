@@ -1,0 +1,9 @@
+version: '3.7'
+
+# In order for the app to write inside the `data` folder, bind the `node` user inside Docker to one of your host (unprivileged) :
+services:
+  gardena-client:
+    build:
+      args:
+        UID: '1000'
+        GID: '1000'

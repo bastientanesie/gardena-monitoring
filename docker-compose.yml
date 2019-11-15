@@ -1,0 +1,24 @@
+version: '3.7'
+
+services:
+  gardena-client:
+    container_name: gardena-monitoring
+    build:
+      context: .
+    restart: always
+    environment:
+      VIRTUAL_HOST: api.gardena.cloud.maevis.fr
+      VIRTUAL_PORT: 5555
+      LETSENCRYPT_HOST: api.gardena.cloud.maevis.fr
+      LETSENCRYPT_EMAIL: bastien.tanesie@gmail.com
+    volumes:
+      - .:/srv/app
+      - chat_node_modules:/srv/app/node_modules
+
+volumes:
+  chat_node_modules:
+
+networks:
+  default:
+    external:
+      name: nginx-proxy

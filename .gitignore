@@ -64,5 +64,4 @@ typings/
 .idea/
 
 # custom
-/access_token.json
-/db.json
+docker-compose.override.yml

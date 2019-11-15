@@ -1,3 +1,5 @@
+"use strict";
+
 const fs = require('fs');
 const debug = require('debug')('gardena:websocket');
 const WebSocket = require('ws');
