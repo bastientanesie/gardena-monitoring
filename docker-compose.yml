@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-  gardena-client:
+  gardena-monitoring:
     container_name: gardena-monitoring
     build:
       context: .
@@ -13,10 +13,10 @@ services:
       LETSENCRYPT_EMAIL: bastien.tanesie@gmail.com
     volumes:
       - .:/srv/app
-      - chat_node_modules:/srv/app/node_modules
+      - app_node_modules:/srv/app/node_modules
 
 volumes:
-  chat_node_modules:
+  app_node_modules:
 
 networks:
   default:
