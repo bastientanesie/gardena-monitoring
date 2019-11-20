@@ -1,6 +1,13 @@
 "use strict";
 
 const debug = require('debug')('mower');
+const EventEmitter = require('events');
+const {
+    MOWER_EVENT_CHANGE,
+    MOWER_STATE,
+    MOWER_ACTIVITY,
+    MOWER_ERROR
+} = require('./constants');
 
 /**
  * Nombre d'éléments gardés dans les listes
@@ -8,11 +15,13 @@ const debug = require('debug')('mower');
  */
 const LIST_ITEM_LIMIT = 20;
 
-class Mower {
+
+class Mower extends EventEmitter {
     /**
      * @param {String} id
      */
     constructor(id) {
+        super();
         this._id = id;
         this._operatingHours = 0;
         this._name = null;
@@ -298,8 +307,15 @@ class Mower {
      * @param {Date} eventDate
      */
     addState(value, eventDate) {
+        const previousState = this._lastState;
         this._states.set(eventDate, value);
         this._lastState = this._findLastByMapKey(this._states);
+
+        // Changement d'état
+        if (previousState !== this._lastState) {
+            this.emit(MOWER_EVENT_CHANGE, MOWER_STATE, this._lastState);
+        }
+
         this._cleanupMap(this._states);
     }
 
@@ -308,8 +324,15 @@ class Mower {
      * @param {Date} eventDate
      */
     addActivity(value, eventDate) {
+        const previousActivity = this._lastActivity;
         this._activities.set(eventDate, value);
         this._lastActivity = this._findLastByMapKey(this._activities);
+
+        // Changement d'état
+        if (previousActivity !== this._lastActivity) {
+            this.emit(MOWER_EVENT_CHANGE, MOWER_ACTIVITY, this._lastActivity);
+        }
+
         this._cleanupMap(this._activities);
     }
 
@@ -318,8 +341,15 @@ class Mower {
      * @param {Date} eventDate
      */
     addError(value, eventDate) {
+        const previousError = this._lastError;
         this._errors.set(eventDate, value);
         this._lastError = this._findLastByMapKey(this._errors);
+
+        // Changement d'état
+        if (previousError !== this._lastError) {
+            this.emit(MOWER_EVENT_CHANGE, MOWER_ERROR, this._lastError);
+        }
+
         this._cleanupMap(this._errors);
     }
 
