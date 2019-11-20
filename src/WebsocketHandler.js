@@ -1,20 +1,26 @@
 "use strict";
 
-const fs = require('fs');
 const debug = require('debug')('gardena:websocket');
 const WebSocket = require('ws');
 const Mower = require('./Mower');
+const {
+    WEBSOCKET_EVENT_DISCONNECTED,
+    WEBSOCKET_EVENT_MOWER_CHANGE,
+    MOWER_EVENT_CHANGE
+} = require('./constants');
+const EventEmitter = require('events');
+const fakeEvents = require('../docs/events');
 
-class WebsocketHandler {
+class WebsocketHandler extends EventEmitter {
     /**
      * @param {Map} devices
      * @param {String} websocketUrl
-     * @param {Function|null} onDisconnect
+     * @param {Function} mowerEventListener
      */
-    constructor(devices, websocketUrl, onDisconnect) {
-        this._devices = devices;
-        this._socket = null;
+    constructor(devices, websocketUrl, mowerEventListener) {
+        super();
 
+        this._devices = devices;
         this._socket = new WebSocket(websocketUrl);
 
         this._socket.on('open', () => {
@@ -23,18 +29,18 @@ class WebsocketHandler {
 
         this._socket.on('close', () => {
             debug(`disconnected`);
-            if (typeof onDisconnect === 'function') {
-                onDisconnect.call();
-            }
+            this.emit(WEBSOCKET_EVENT_DISCONNECTED);
         });
 
         this._socket.on('message', (data) => {
             const event = JSON.parse(data);
             const type = event.type.charAt(0).toUpperCase() + event.type.slice(1).toLowerCase();
 
+            const mower = this._getOrCreateMower(event.id);
+
             if (this[`_handle${type}`] && typeof this[`_handle${type}`] === 'function') {
                 debug('Event: %s', type);
-                this[`_handle${type}`].call(this, event);
+                this[`_handle${type}`].call(this, event, mower);
             } else {
                 debug('Event: %s (Generic) ', type);
                 debug('%o', event);
@@ -42,20 +48,18 @@ class WebsocketHandler {
         });
     }
 
-    _handleLocation(event) {
+    _handleLocation(event, mower) {
         // debug('Location: %s', event.attributes.name);
     }
 
-    _handleDevice(event) {
+    _handleDevice(event, mower) {
         // debug('Device: %s', event.id);
     }
 
-    _handleCommon(event) {
+    _handleCommon(event, mower) {
         if (! event.hasOwnProperty('attributes')) {
             throw new Error(`Unexpected "common" event format : ${JSON.stringify(event)}`);
         }
-
-        const mower = this._getOrCreateMower(event.id);
 
         if (event.attributes.hasOwnProperty('name')) { // UserDefinedNameWrapper
             mower.name = event.attributes.name.value;
@@ -94,12 +98,10 @@ class WebsocketHandler {
         }
     }
 
-    _handleMower(event) {
+    _handleMower(event, mower) {
         if (! event.hasOwnProperty('attributes')) {
             throw new Error(`Unexpected "mower" event format : ${JSON.stringify(event)}`);
         }
-
-        const mower = this._getOrCreateMower(event.id);
 
         if (event.attributes.hasOwnProperty('state')) { // TimestampedServiceState
             mower.addState(
@@ -136,6 +138,9 @@ class WebsocketHandler {
         }
         else {
             mower = new Mower(deviceId);
+            mower.on(MOWER_EVENT_CHANGE, (type, data) => {
+                this.emit(WEBSOCKET_EVENT_MOWER_CHANGE, type, data);
+            });
             this._devices.set(deviceId, mower);
         }
         return mower;
