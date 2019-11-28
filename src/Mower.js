@@ -13,8 +13,7 @@ const {
  * Nombre d'éléments gardés dans les listes
  * @type {number}
  */
-const LIST_ITEM_LIMIT = 20;
-
+const LIST_ITEM_LIMIT = Infinity;
 
 class Mower extends EventEmitter {
     /**
