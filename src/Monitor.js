@@ -49,7 +49,12 @@ class Monitor {
      * @returns {Promise<void>}
      */
     async start(username, password) {
-        this._jwt = await this._oauth.getAccessToken(username, password);
+        try {
+            this._jwt = await this._oauth.getAccessToken(username, password);
+        } catch (error) {
+            debug(`Error: failed to obtain access token: %s`, error);
+            return;
+        }
 
         const gardena = new GardenaAdapter(
             this._gardenaEndpoint,
@@ -61,8 +66,13 @@ class Monitor {
             this._loadStateFromFile();
         }
         else {
-            for (let location of await gardena.getLocations()) {
-                this._locations.set(location.id, location);
+            try {
+                for (let location of await gardena.getLocations()) {
+                    this._locations.set(location.id, location);
+                }
+            } catch (error) {
+                debug(`Error: failed to fetch locations: %s`, error);
+                return;
             }
         }
 
