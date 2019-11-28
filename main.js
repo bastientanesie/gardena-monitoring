@@ -10,23 +10,21 @@ const notifier = new Notifier(
     process.env.VAPID_EMAIL
 );
 
+const webServer = new WebServer(notifier);
+
 const monitor = new Monitor(
     notifier,
+    webServer,
     process.env.OAUTH_ENDPOINT,
     process.env.GARDENA_ENDPOINT,
     process.env.API_KEY
 );
-
-const webServer = new WebServer(notifier);
 
 // Lance le service de monitoring
 monitor.start(
     process.env.GARDENA_USERNAME,
     process.env.GARDENA_PASSWORD
 );
-
-// Lance le serveur web
-webServer.start();
 
 const handleExit = (code) => {
     monitor.persistStateToFile();

@@ -9,4 +9,10 @@ module.exports = Object.freeze({
     MOWER_STATE: 'mower:state',
     MOWER_ACTIVITY: 'mower:activity',
     MOWER_ERROR: 'mower:error',
+
+    SOCKET_ORIGINS: [
+        'http://localhost:8080',
+        'https://gardena.cloud.maevis.fr',
+    ],
+    SOCKET_EVENT_CONNECTED: 'socket:connected',
 });

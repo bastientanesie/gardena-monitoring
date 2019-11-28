@@ -13,23 +13,28 @@ const {
     WEBSOCKET_EVENT_MOWER_CHANGE,
     MOWER_STATE,
     MOWER_ACTIVITY,
-    MOWER_ERROR
+    MOWER_ERROR,
+    SOCKET_EVENT_CONNECTED
 } = require('./constants');
 
 class Monitor {
     /**
      * @param {Notifier} notifier
+     * @param {WebServer} webServer
      * @param {String} oauthEndpoint
      * @param {String} gardenaEndpoint
      * @param {String} apiKey
      */
     constructor(
         notifier,
+        webServer,
         oauthEndpoint,
         gardenaEndpoint,
         apiKey
     ) {
         this._notifier = notifier;
+        this._webServer = webServer;
+        this._socket = null;
         this._devices = new Map([]);
         this._locations = new Map([]);
         this._jwt = null;
@@ -41,6 +46,14 @@ class Monitor {
             apiKey,
             ACCESS_TOKEN_FILEPATH
         );
+
+        // Nouvelle connexion via socket, on lui envoie les données à jour
+        this._webServer.on(SOCKET_EVENT_CONNECTED, (callback) => {
+            const deviceArray = Array.from(this._devices.values()).map(
+                (device) => device.serialize()
+            );
+            callback(deviceArray);
+        })
     }
 
     /**
@@ -83,6 +96,9 @@ class Monitor {
             debug('Location "%s": %s', location.attributes.name, location.id);
             this._launchWebSocketLoop(gardena, location.id, this._onMowerEvent);
         }
+
+        // Lance le serveur web
+        this._socket = this._webServer.start();
     }
 
     /**
@@ -166,14 +182,23 @@ class Monitor {
     async _onMowerEvent(eventType, eventData) {
         switch (eventType) {
             case MOWER_STATE:
-                return this._notifier.broadcast(`Nouvel état : ${eventData}`);
+                await this._notifier.broadcast(`Nouvel état : ${eventData}`);
+                break;
             case MOWER_ACTIVITY:
-                return this._notifier.broadcast(`Nouvelle activité : ${eventData}`);
+                await this._notifier.broadcast(`Nouvelle activité : ${eventData}`);
+                break;
             case MOWER_ERROR:
-                return this._notifier.broadcast(`Nouvelle erreur : ${eventData}`);
+                await this._notifier.broadcast(`Nouvelle erreur : ${eventData}`);
+                break;
             default:
                 debug('Unhandled event %s: %o', eventType, eventData);
+                break;
         }
+
+        const deviceArray = Array.from(this._devices.values()).map(
+            (device) => device.serialize()
+        );
+        this._webServer.broadcastSocketUpdate(deviceArray);
     }
 }
 
