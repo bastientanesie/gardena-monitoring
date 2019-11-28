@@ -434,7 +434,6 @@ class Mower extends EventEmitter {
         if (this._disableEmitter) {
             return false;
         }
-        debug(`Event ${event} : %o`, arguments);
         return super.emit(event, ...args);
     }
 
