@@ -31,6 +31,7 @@ class Monitor {
     ) {
         this._notifier = notifier;
         this._devices = new Map([]);
+        this._locations = new Map([]);
         this._jwt = null;
         this._gardenaEndpoint = gardenaEndpoint;
         this._apiKey = apiKey;
@@ -59,16 +60,19 @@ class Monitor {
         if (fs.existsSync(DB_FILEPATH)) {
             this._loadStateFromFile();
         }
+        else {
+            for (let location of await gardena.getLocations()) {
+                this._locations.set(location.id, location);
+            }
+        }
 
         this._setupAutosave(30);
 
         // Lancement de la boucle de websockets
-        gardena.getLocations().then((locations) => {
-            for (let location of locations) {
-                debug('Location "%s": %s', location.attributes.name, location.id);
-                this._launchWebSocketLoop(gardena, location.id, this._onMowerEvent);
-            }
-        });
+        for (let location of Array.from(this._locations.values())) {
+            debug('Location "%s": %s', location.attributes.name, location.id);
+            this._launchWebSocketLoop(gardena, location.id, this._onMowerEvent);
+        }
     }
 
     /**
@@ -86,6 +90,10 @@ class Monitor {
             );
         });
 
+        state.locations.forEach((location) => {
+            this._locations.set(location.id, location);
+        });
+
         this._notifier.populateFromJson(state.notifier.subscriptions);
         debug(`Database loaded`);
     }
@@ -97,8 +105,10 @@ class Monitor {
         const deviceArray = Array.from(this._devices.values()).map(
             (device) => device.serialize()
         );
+        const locationArray = Array.from(this._locations.values());
         const json = JSON.stringify({
             devices: deviceArray,
+            locations: locationArray,
             notifier: this._notifier.serialize()
         }, null, 2);
         fs.writeFileSync(DB_FILEPATH, json, { flag: 'w' });
