@@ -30,9 +30,8 @@ class GardenaAdapter {
                 if (error) {
                     return reject(error);
                 }
-                // this._debug(`/locations/ %O`, body);
                 if (response.statusCode !== 200) {
-                    return reject(`Invalid HTTP status code : ${response.statusCode} ${response.statusMessage}`);
+                    return reject(`Invalid HTTP status code : ${response.statusCode} - ${JSON.parse(body).message}`);
                 }
 
                 return resolve(JSON.parse(body).data);
@@ -52,9 +51,8 @@ class GardenaAdapter {
                 if (error) {
                     return reject(error);
                 }
-                // this._debug(`/locations/${locationId} %O`, body);
                 if (response.statusCode !== 200) {
-                    return reject(`Invalid HTTP status code : ${response.statusCode} ${response.statusMessage}`);
+                    return reject(`Invalid HTTP status code : ${response.statusCode} - ${JSON.parse(body).message}`);
                 }
 
                 return resolve(JSON.parse(body));
@@ -87,9 +85,8 @@ class GardenaAdapter {
                 if (error) {
                     return reject(error);
                 }
-                // this._debug(`/websocket %O`, body);
                 if (response.statusCode !== 201) {
-                    return reject(`Invalid HTTP status code : ${response.statusCode} ${response.statusMessage}`);
+                    return reject(`Invalid HTTP status code : ${response.statusCode} - ${JSON.parse(body).message}`);
                 }
 
                 return resolve(JSON.parse(body).data);
