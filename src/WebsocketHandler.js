@@ -9,7 +9,6 @@ const {
     MOWER_EVENT_CHANGE
 } = require('./constants');
 const EventEmitter = require('events');
-const fakeEvents = require('../docs/events');
 
 class WebsocketHandler extends EventEmitter {
     /**
@@ -138,11 +137,16 @@ class WebsocketHandler extends EventEmitter {
         }
         else {
             mower = new Mower(deviceId);
-            mower.on(MOWER_EVENT_CHANGE, (type, data) => {
-                this.emit(WEBSOCKET_EVENT_MOWER_CHANGE, type, data);
-            });
             this._devices.set(deviceId, mower);
         }
+
+        if (mower.listenerCount(MOWER_EVENT_CHANGE) < 1) {
+            mower.on(MOWER_EVENT_CHANGE, (type, data) => {
+                debug('mower event', type);
+                this.emit(WEBSOCKET_EVENT_MOWER_CHANGE, type, data);
+            });
+        }
+
         return mower;
     }
 }

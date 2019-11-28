@@ -42,6 +42,8 @@ class Mower extends EventEmitter {
         this._batteryStates = new Map([]);
         this._rfLinkLevels = new Map([]);
         this._rfLinkStates = new Map([]);
+
+        this._disableEmitter = false;
     }
 
     /**
@@ -50,6 +52,7 @@ class Mower extends EventEmitter {
      */
     static fromJson(jsonObject) {
         const mower = new this(jsonObject.id);
+        mower._disableEmitter = true;
         mower.name = jsonObject.name;
         mower.serial = jsonObject.serial;
         mower.modelType = jsonObject.modelType;
@@ -97,6 +100,8 @@ class Mower extends EventEmitter {
                 new Date(error[0])
             );
         });
+
+        mower._disableEmitter = false;
 
         return mower;
     }
@@ -418,6 +423,19 @@ class Mower extends EventEmitter {
             rfLinkLevels: Array.from(this._rfLinkLevels.entries()),
             errors: Array.from(this._errors.entries())
         };
+    }
+
+    /**
+     * @param {String} event
+     * @param {*[]} args
+     * @returns {boolean}
+     */
+    emit(event, ...args) {
+        if (this._disableEmitter) {
+            return false;
+        }
+        debug(`Event ${event} : %o`, arguments);
+        return super.emit(event, ...args);
     }
 
     /**

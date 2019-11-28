@@ -75,22 +75,32 @@ class Monitor {
      * @private
      */
     _loadStateFromFile() {
-        JSON.parse(
+        const state = JSON.parse(
             fs.readFileSync(DB_FILEPATH).toString()
-        ).forEach((device) => {
+        );
+
+        state.devices.forEach((device) => {
             this._devices.set(
                 device.id,
                 Mower.fromJson(device)
             );
         });
+
+        this._notifier.populateFromJson(state.notifier.subscriptions);
         debug(`Database loaded`);
     }
 
+    /**
+     * Persiste l'état actuel dans un fichier
+     */
     persistStateToFile() {
         const deviceArray = Array.from(this._devices.values()).map(
             (device) => device.serialize()
         );
-        const json = JSON.stringify(deviceArray, null, 2);
+        const json = JSON.stringify({
+            devices: deviceArray,
+            notifier: this._notifier.serialize()
+        }, null, 2);
         fs.writeFileSync(DB_FILEPATH, json, { flag: 'w' });
     }
 

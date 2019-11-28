@@ -57,18 +57,48 @@ class Notifier {
 
     /**
      * @param {Object} subscription
-     * @param {Object} dataToSend
+     * @param {*} dataToSend
      * @returns {Promise<boolean>}
      * @see https://www.npmjs.com/package/web-push#sendnotificationpushsubscription-payload-options
      * @private
      */
     async _sendNotification(subscription, dataToSend = '') {
-        const response = await webpush.sendNotification(subscription, dataToSend);
-        if (response.statusCode === 201) {
-            return true;
+        try {
+            // payload must be a String or a node Buffer
+            const payload = JSON.stringify({
+                timestamp: Date.now(),
+                data: dataToSend
+            });
+            const response = await webpush.sendNotification(subscription, payload);
+            if (response.statusCode === 201) {
+                return true;
+            }
+            debug('Error: %s %o', response.statusCode, response);
+            return false;
         }
-        debug('Error - Notification failed: %s %o', response.statusCode, response);
-        return false;
+        catch (error) {
+            debug('Error: %s', error.message);
+            this._subscriptions.delete(subscription);
+            return false;
+        }
+    }
+
+    /**
+     * @returns {Object}
+     */
+    serialize() {
+        return {
+            subscriptions: Array.from(this._subscriptions.values())
+        };
+    }
+
+    /**
+     * @param {Array<Object>} jsonObject
+     */
+    populateFromJson(jsonObject) {
+        jsonObject.forEach((subscription) => {
+            this.addSubscription(subscription);
+        });
     }
 }
 
